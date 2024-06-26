@@ -1,2 +1,2 @@
 # plinxu
-Providing Seemless Fintech Platfomr
+Providing Seemless Fintech Platfom
