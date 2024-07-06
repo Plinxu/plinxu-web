@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,4 +5,90 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String           @id @default(cuid())
+  email           String           @unique
+  accountNumber   String           @unique
+  personalAccount PersonalAccount?
+  businessAccount BusinessAccount?
+  country         String?
+  nationality     String?
+  socialLink      String?
+  photo           String?
+  video           String?
+  gender          String?
+  DOB             Int?
+  phoneNumber     Int?
+  Address         String?
+  signature       String?
+  info            String?
+  currency        String?
+  transactions    Transaction[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  DebitCard       DebitCard[]
+}
+
+model PersonalAccount {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  balance         Float    @default(0.0)
+  currency        String   @default("USD")
+  debitCardNumber String?  @unique
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  User User @relation(fields: [userId], references: [id])
+}
+
+model Transaction {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  amount            Float
+  currency          String
+  localCurrency String?
+  country       String?
+  convertedAmount   Float?
+  convertedCurrency String?
+  type              String // 'deposit' or 'withdrawal'
+  source            String // 'external' or 'internal'
+  status            String // 'pending', 'completed', 'failed'
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  User User @relation(fields: [userId], references: [id])
+}
+
+model BusinessAccount {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  balance   Float    @default(0.0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  User User @relation(fields: [userId], references: [id])
+}
+
+model DebitCard {
+  id         String   @id @default(cuid())
+  cardNumber String   @unique
+  cvv        String
+  expiryDate DateTime
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  createdAt  DateTime @default(now())
+}
+
+enum TransactionType {
+  DEPOSIT
+  SEND
+  RECEIVE
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
 }
