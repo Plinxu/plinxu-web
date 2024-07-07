@@ -39,7 +39,11 @@ model PersonalAccount {
   debitCardNumber String?  @unique
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-
+  bankId         String
+  accountId      String    @unique
+  accessToken    String
+  fundingSourceUrl   String
+  shareableId     String
   User User @relation(fields: [userId], references: [id])
 }
 
