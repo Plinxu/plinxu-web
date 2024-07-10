@@ -8,43 +8,64 @@ datasource db {
 }
 
 model User {
-  id              String           @id @default(cuid())
-  email           String           @unique
-  accountNumber   String           @unique
-  personalAccount PersonalAccount?
-  businessAccount BusinessAccount?
-  country         String?
-  nationality     String?
-  socialLink      String?
-  photo           String?
-  video           String?
-  gender          String?
-  DOB             Int?
-  phoneNumber     Int?
-  Address         String?
-  signature       String?
-  info            String?
-  currency        String?
-  transactions    Transaction[]
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  DebitCard       DebitCard[]
+  id               String           @id @default(cuid())
+  email            String           @unique
+  accountNumber    String           @unique
+  personalAccount  PersonalAccount?
+  businessAccount  BusinessAccount?
+  bankAccount      bankAccount?     @relation(fields: [bankAccountId], references: [id])
+  country          String?
+  nationality      String?
+  socialLink       String?
+  photo            String?
+  video            String?
+  gender           String?
+  DOB              Int?
+  phoneNumber      Int?
+  Address          String?
+  signature        String?
+  info             String?
+  currency         String?
+  riskScore        String?
+  firstName        String?
+  lastName         String?
+  middleName       String?
+  occupation       String?
+  placeOfBirth     String?
+  citizenships     String?
+  type             String?
+  expectedVolume   String?
+  employment       String?
+  postalcode       String?
+  city             String?
+  state            String?
+  bankId           String?
+  accountId        String?
+  accessToken      String?
+  fundingSourceUrl String?
+  shareableId      String?
+  dwollaCustomerId  String?
+  transactions     Transaction[]
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  DebitCard        DebitCard[]
+  bankAccountId    String?
 }
 
 model PersonalAccount {
-  id              String   @id @default(cuid())
-  userId          String   @unique
-  balance         Float    @default(0.0)
-  currency        String   @default("USD")
-  debitCardNumber String?  @unique
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  bankId         String
-  accountId      String    @unique
-  accessToken    String
-  fundingSourceUrl   String
-  shareableId     String
-  User User @relation(fields: [userId], references: [id])
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  balance          Float    @default(0.0)
+  currency         String   @default("USD")
+  debitCardNumber  String?  @unique
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  bankId           String
+  accountId        String   @unique
+  accessToken      String
+  fundingSourceUrl String
+  shareableId      String
+  User             User     @relation(fields: [userId], references: [id])
 }
 
 model Transaction {
@@ -52,8 +73,8 @@ model Transaction {
   userId            String   @unique
   amount            Float
   currency          String
-  localCurrency String?
-  country       String?
+  localCurrency     String?
+  country           String?
   convertedAmount   Float?
   convertedCurrency String?
   type              String // 'deposit' or 'withdrawal'
@@ -95,4 +116,18 @@ enum TransactionStatus {
   PENDING
   COMPLETED
   FAILED
+}
+
+model bankAccount {
+  id               String  @id @default(cuid())
+  userId           String?
+  bankId           String?
+  accountId        String?
+  accessToken      String?
+  fundingSourceUrl String?
+  shareableId      String?
+
+  User User[]
+
+  @@unique([bankId, userId, accountId, accessToken, fundingSourceUrl, shareableId])
 }

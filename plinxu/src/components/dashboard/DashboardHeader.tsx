@@ -1,3 +1,5 @@
+import { LoggedInDropdown } from "../loggedInDropdows";
+
 export default function DashboardHeader() {
   return (
     <header className="bg-white shadow-sm z-10">
@@ -18,8 +20,7 @@ export default function DashboardHeader() {
               </div>
             </div>
             <div className="ml-4 flex items-center">
-              <img className="h-8 w-8 rounded-full" src="https://via.placeholder.com/150" alt="User avatar" />
-              <span className="ml-2 font-medium text-gray-700">Danver Young</span>
+              <LoggedInDropdown />
             </div>
           </div>
         </div>

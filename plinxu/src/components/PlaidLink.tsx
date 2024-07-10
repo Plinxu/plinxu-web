@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { Button } from './ui/button'
 import { PlaidLinkOnSuccess, PlaidLinkOptions, usePlaidLink } from 'react-plaid-link'
 import { useRouter } from 'next/navigation';
-import { createLinkToken, exchangePublicToken } from '../app/(personal)/dashboard/';
+import { createLinkToken, exchangePublicToken } from '../app/(personal)/personal/personal.actions';
 import Image from 'next/image';
 
 const PlaidLink = ({ user, variant }: PlaidLinkProps) => {

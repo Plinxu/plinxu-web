@@ -2,8 +2,8 @@
 import HeaderBox from '@/components/HeaderBox'
 import { Pagination } from '@/components/Pagination';
 import TransactionsTable from '@/components/TransactionsTable';
-import { getAccount, getAccounts } from '../dashboard/bank.action';
-import { getLoggedInUser } from '../dashboard/personal.actions';
+import { getAccount, getAccounts } from '../personal/bank.action';
+import { getLoggedInUser } from '../personal/personal.actions';
 import { formatAmount } from '@/lib/utils';
 import React from 'react'
 

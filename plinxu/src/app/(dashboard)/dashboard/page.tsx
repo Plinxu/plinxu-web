@@ -1,3 +1,5 @@
+'use client'
+
 import Head from 'next/head'
 import Sidebar from '@/components/dashboard/Sidebar'
 import DashboardHeader from '@/components/dashboard/DashboardHeader'
@@ -7,8 +9,18 @@ import Activities from '@/components/dashboard/Activities';
 import TransactionHistory from '@/components/dashboard/TransactionHistory';
 import MyCards from '@/components/dashboard/MyCards';
 import Savings from '@/components/dashboard/Savings';
+import { LoginLink, useKindeBrowserClient } from "@kinde-oss/kinde-auth-nextjs";
+import { useRouter } from 'next/navigation';
+
 
 const page = () => {
+  // const { isAuthenticated, isLoading } = useKindeBrowserClient();
+  // const router = useRouter()
+
+  // if(!isAuthenticated) {
+  //   router.push('/api/auth/login')
+  // }
+
   return (
     <div className="flex h-screen bg-gray-100">
     <Head>

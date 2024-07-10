@@ -8,9 +8,9 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 
-import { createTransfer } from "../app/(personal)/dashboard/dwolla.actions";
-import { createTransaction } from "../app/(personal)/dashboard/transaction.action";
-import { getBank, getBankByAccountId } from "../app/(personal)/dashboard/personal.actions";
+import { createTransfer } from "../app/(personal)/personal/dwolla.actions";
+import { createTransaction } from "../app/(personal)/personal/transaction.action";
+import { getBank, getBankByAccountId } from "../app/(personal)/personal/personal.actions";
 import { decryptId } from "@/lib/utils";
 
 import { BankDropdown } from "./BankDropdown";

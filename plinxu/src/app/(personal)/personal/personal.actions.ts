@@ -9,6 +9,13 @@ import { CountryCode, ProcessorTokenCreateRequest, ProcessorTokenCreateRequestPr
 import { plaidClient } from '@/lib/plaid';
 import { revalidatePath } from "next/cache";
 import { addFundingSource, createDwollaCustomer } from "./dwolla.actions";
+import railsrClient from '@/lib/railsClient';
+import { prisma } from "@/lib/prisma";
+import { currentUser, auth } from "@clerk/nextjs/server";
+import { toast } from "sonner";
+import { PersonalSchema, PersonalType } from "./personal.schema";
+import { PrismaClient } from "@prisma/client";
+
 
 const {
   APPWRITE_DATABASE_ID: DATABASE_ID,
@@ -31,6 +38,8 @@ export const getUserInfo = async ({ userId }: getUserInfoProps) => {
     console.log(error)
   }
 }
+
+
 
 export const signIn = async ({ email, password }: signInProps) => {
   try {
@@ -67,7 +76,7 @@ export const signUp = async ({ password, ...userData }: SignUpParams) => {
       `${firstName} ${lastName}`
     );
 
-    if(!newUserAccount) throw new Error('Error creating user')
+    if(!newUserAccount) throw new Error('User ALready Exists')
 
     const dwollaCustomerUrl = await createDwollaCustomer({
       ...userData,
@@ -151,49 +160,22 @@ export const createLinkToken = async (user: User) => {
   }
 }
 
-export const createBankAccount = async ({
-  userId,
-  bankId,
-  accountId,
-  accessToken,
-  fundingSourceUrl,
-  shareableId,
-}: createBankAccountProps) => {
-  try {
-    const { database } = await createAdminClient();
 
-    const bankAccount = await database.createDocument(
-      DATABASE_ID!,
-      BANK_COLLECTION_ID!,
-      ID.unique(),
-      {
-        userId,
-        bankId,
-        accountId,
-        accessToken,
-        fundingSourceUrl,
-        shareableId,
-      }
-    )
-
-    return parseStringify(bankAccount);
-  } catch (error) {
-    console.log(error);
-  }
-}
 
 export const exchangePublicToken = async ({
   publicToken,
-  user,
 }: exchangePublicTokenProps) => {
+  const user = await currentUser()
   try {
     // Exchange public token for access token and item ID
     const response = await plaidClient.itemPublicTokenExchange({
       public_token: publicToken,
     });
 
+
     const accessToken = response.data.access_token;
     const itemId = response.data.item_id;
+
     
     // Get account information from Plaid using the access token
     const accountsResponse = await plaidClient.accountsGet({
@@ -214,7 +196,7 @@ export const exchangePublicToken = async ({
 
      // Create a funding source URL for the account using the Dwolla customer ID, processor token, and bank name
      const fundingSourceUrl = await addFundingSource({
-      dwollaCustomerId: user.dwollaCustomerId,
+      dwollaCustomerId: user?.id as any,
       processorToken,
       bankName: accountData.name,
     });
@@ -223,13 +205,15 @@ export const exchangePublicToken = async ({
     if (!fundingSourceUrl) throw Error;
 
     // Create a bank account using the user ID, item ID, account ID, access token, funding source URL, and shareableId ID
-    await createBankAccount({
-      userId: user.$id,
+   await prisma.bankAccount.create({
+      data: {
+        userId: user?.id,
       bankId: itemId,
       accountId: accountData.account_id,
       accessToken,
       fundingSourceUrl,
       shareableId: encryptId(accountData.account_id),
+      }
     });
 
     // Revalidate the path to reflect the changes
@@ -293,3 +277,155 @@ export const getBankByAccountId = async ({ accountId }: getBankByAccountIdProps)
     console.log(error)
   }
 }
+
+export const createRailsrUser = async (data: PersonalType) => {
+  const validation = PersonalSchema.safeParse(data);
+  if (!validation.success) {
+    throw new Error("form not valid");
+  }
+
+  const user = await currentUser()
+
+  if (!user) {
+    toast.error('user not found')
+  }
+
+  const {name, country, currency, nationality, gender,DOB, city, employment, state, postalcode,isApproved , signature, middleName, occupation  } = data
+
+
+  const requestBody = {
+    taxResidences: data.country,
+    accountUsage: ['sendAndReceiveMoneyTransfers', 'digitalWallet'],
+    citizenships: data.nationality,
+    riskScore: 'low',
+    lastName: user?.lastName,
+    dateOfBirth: data.DOB,
+    gender: data.gender,
+    email: user?.emailAddresses[0].emailAddress,
+    placeOfBirthCountry: data.nationality,
+    firstName: user?.firstName,
+    middleNames: data.middleName,
+    telephone: user?.phoneNumbers,
+    metadata: data.info,
+    occupation: data.occupation,
+    type: "person",
+    placeOfBirthCity: data.city,
+    isPep: false,
+    expectedVolume: '0-5000',
+    employmentStatus: data.employment,
+    residentialAddress: data.Address
+  };
+
+  try {
+    const response = await railsrClient.post('/endusers', requestBody);
+    return response.data;
+  } catch (error) {
+    console.error('Error creating Railsr user:', error);
+    throw error;
+  }
+};
+
+export const onBoarding = async (data: PersonalType) => {
+
+  const validation = PersonalSchema.safeParse(data);
+  if (!validation.success) {
+    throw new Error("form not valid");
+  }
+
+  const user = await currentUser()
+
+  if (!user) {
+    toast.error('user not found')
+  }
+  const {name, country, currency, nationality, gender,DOB, city, employment, state, postalcode,isApproved , signature  } = data
+
+  const onboard = await prisma.user.update({
+    where: {
+      id: user?.id,
+      email: user?.emailAddresses[0].emailAddress,
+      firstName: user?.firstName,
+      lastName: user?.lastName,
+      gender: data.gender,
+      DOB: data.DOB as any,
+      city: data.city,
+      employment: data.employment,
+      state: data.state,
+      postalcode: data.postalcode
+    },
+    data: {
+      city,
+      postalcode,
+      state,
+      employment,
+      gender,
+      signature,
+      nationality,
+      currency,
+      country,
+      DOB
+    }  
+
+  })
+  await createRailsrUser(data)
+
+
+  return onboard;
+}
+
+export const createLinkTokens = async (data: PersonalType) => {
+  const user = await currentUser()
+
+  if (!user) {
+    toast.error('user not found')
+  }
+  const {name, country, currency, nationality, gender,DOB, city, employment, state, postalcode,isApproved , signature  } = data
+
+  try {
+    const tokenParams = {
+      user: {
+        client_user_id: user?.id as any
+      },
+      client_name: `${user?.firstName} ${user?.lastName}`,
+      products: ['auth'] as Products[],
+      language: 'en',
+      country_codes: ['US'] as CountryCode[],
+    }
+
+    const response = await plaidClient.linkTokenCreate(tokenParams);
+
+    return parseStringify({ linkToken: response.data.link_token })
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+
+export const createBankAccounts = async ({
+  userId,
+  bankId,
+  accountId,
+  accessToken,
+  fundingSourceUrl,
+  shareableId,
+}: createBankAccountProps) => {
+  try {
+
+    const bankAccount = await prisma.bankAccount.create({
+        data:{
+          userId,
+          bankId,
+        accountId,
+        accessToken,
+        fundingSourceUrl,
+        shareableId,
+        }
+      })
+
+    return parseStringify(bankAccount);
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+
+
